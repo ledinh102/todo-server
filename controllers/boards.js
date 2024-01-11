@@ -1,8 +1,29 @@
 import { Board } from "../utils/queryDB.js"
-
+import { v4 as uuid } from "uuid"
 const getBoards = async (req, res) => {
 	try {
 		const boards = await Board.find({})
+		res.json(boards)
+	} catch (err) {
+		res.status(400).json({ message: err.message })
+	}
+}
+
+const getBoardsByUserId = async (req, res) => {
+	const userId = req.params.userId
+	console.log(userId)
+	try {
+		let boards = await Board.find({ userId: userId })
+		if (boards.length === 0) {
+			const newBoard = new Board({
+				_id: uuid(),
+				boardName: "New board",
+				positionLists: [],
+				userId: userId,
+			})
+			await newBoard.save()
+			boards = await Board.find({ userId: userId })
+		}
 		res.json(boards)
 	} catch (err) {
 		res.status(400).json({ message: err.message })
@@ -60,7 +81,7 @@ const updateBoardNameById = async (req, res) => {
 const updatePositionListsBoardById = async (req, res) => {
 	const boardId = req.params.boardId
 	const { positionLists } = req.body
-	console.log("updatePositionListsBoardById", positionLists)
+	// console.log("updatePositionListsBoardById", positionLists)
 	try {
 		await Board.findOneAndUpdate(
 			{ _id: boardId },
@@ -81,4 +102,5 @@ export {
 	deleteBoardById,
 	updateBoardNameById,
 	updatePositionListsBoardById,
+	getBoardsByUserId,
 }

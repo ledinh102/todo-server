@@ -4,6 +4,7 @@ import {
 	deleteBoardById,
 	getBoardById,
 	getBoards,
+	getBoardsByUserId,
 	updateBoardNameById,
 	updatePositionListsBoardById,
 } from "../controllers/boards.js"
@@ -11,10 +12,11 @@ import {
 const router = express.Router()
 
 router.get("/", getBoards)
+router.get("/user/:userId", getBoardsByUserId)
+router.get("/:boardId", getBoardById)
 router.post("/", createNewBoard)
 router.delete("/:boardId", deleteBoardById)
 router.patch("/rename/:boardId", updateBoardNameById)
 router.patch("/positionLists/:boardId", updatePositionListsBoardById)
-router.get("/:boardId", getBoardById)
 
 export default router

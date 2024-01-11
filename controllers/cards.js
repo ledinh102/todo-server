@@ -11,9 +11,20 @@ const getCards = async (req, res) => {
 
 const getCardsByListId = async (req, res) => {
 	const listId = req.params.listId
-	// console.log(listId)
 	try {
-		const cards = await Card.find({ listId: listId, isArchived: false })
+		const list = await List.findOne({ _id: listId })
+		const { positionCards } = list
+		// console.log(positionCards)
+		const cards = await Card.find({
+			_id: { $in: positionCards },
+			isArchived: false,
+		})
+		cards.sort((a, b) => {
+			const positionA = positionCards.indexOf(a._id)
+			const positionB = positionCards.indexOf(b._id)
+			return positionA - positionB
+		})
+		// console.log(cards)
 		res.json(cards)
 	} catch (err) {
 		res.status(400).json({ message: err.message })
@@ -33,12 +44,13 @@ const getCardById = async (req, res) => {
 const createNewCard = async (req, res) => {
 	const card = req.body
 	try {
-		const newCard = new Card(req.body)
-		await newCard.save()
 		await List.updateOne(
 			{ _id: card.listId },
 			{ $push: { positionCards: card._id } }
 		)
+		delete card.listId
+		const newCard = new Card(req.body)
+		await newCard.save()
 		res.status(201).json({ message: "Create new card successfully" })
 	} catch (err) {
 		res.status(400).json({ message: err.message })
@@ -50,10 +62,7 @@ const deleteCardById = async (req, res) => {
 	try {
 		const card = await Card.findOne({ _id: cardId })
 		await Card.deleteOne({ _id: cardId })
-		await Board.updateOne(
-			{ _id: card.listId },
-			{ $pull: { positionCards: card._id } }
-		)
+		await List.findOneAndUpdate({}, { $pull: { positionCards: card._id } })
 		res.status(204).json({ message: "Card deleted successfully" })
 	} catch (err) {
 		res.status(400).json({ message: err.message })
@@ -75,7 +84,7 @@ const archivedCardById = async (req, res) => {
 const renameCardById = async (req, res) => {
 	const cardId = req.params.cardId
 	const { newCardName } = req.body
-	console.log("newCardName", newCardName)
+	// console.log("function renameCardById", newCardName)
 	try {
 		await Card.updateOne({ _id: cardId }, { cardName: newCardName })
 		res.status(200).json({ message: "Rename Card successfully" })
